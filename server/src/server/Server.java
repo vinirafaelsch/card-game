@@ -17,7 +17,7 @@ public class Server {
     ArrayList<Thread> threads;
     ArrayList<Jogador> jogadores;
     ArrayList<Jogo> jogos;
-    
+
     public Server() {
         threads = new ArrayList<>();
         jogadores = new ArrayList<>();
@@ -42,18 +42,18 @@ public class Server {
     }
 
     private void init() throws IOException {
-        
+
         try {
             serverSocket = criarServerSocket(5555);
             //2 -Esperar o um pedido de conexÃ£o;
-            int id=0;
+            int id = 0;
             do {
 
                 System.out.println("Esperando conexao...");
                 Socket socket = esperaConexao(); //bloqueante
                 //3 - Criar streams de enechar socket de comunicaÃ§Ã£o entre servidor/cliente
                 //Criar outra thread para tratar cliente novo
-                
+
                 Jogador tarefa = new Jogador(socket, this, id++);
                 jogadores.add(tarefa);
                 Thread thread = new Thread(tarefa);
@@ -68,12 +68,12 @@ public class Server {
             serverSocket.close();
         }
     }
-    
-    
-    protected Jogador getClienteById(int id){
+
+    protected Jogador getClienteById(int id) {
         for (Jogador j : jogadores) {
-            if( j.getId() == id )
+            if (j.getId() == id) {
                 return j;
+            }
         }
         return null;
     }
@@ -127,4 +127,17 @@ public class Server {
             }
         }
     }
+    
+    // Envia mensagem para um cliente especifico
+    protected void sendToOne(Mensagem m, Jogador emissor, Jogador guest) throws IOException {
+        for (Jogador t : jogadores) {
+            if (t != emissor && t == guest) {
+                t.enviaMsgAoCliente(m);
+            }
+        }
+    }
+
+//    protected void criarJogo(Jogador emissor, Jogador guest) {
+//
+//    }
 }
