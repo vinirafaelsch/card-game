@@ -22,6 +22,7 @@ class Jogador implements Runnable {
     int id;
     Jogo jogo;
     private ArrayList<Jogador> invites;
+    private String ultimaJogada;
 
     public Jogador(Socket socket, Server server, int id) {
         this.socket = socket;
@@ -155,7 +156,40 @@ class Jogador implements Runnable {
                             }
                             break;
                             case "JOGADA": {
+                                try {
+                                    Mensagem m = Mensagem.parseString(msgCliente);
+                                    ultimaJogada = m.getParam("opcao"); // stamina or strength or defense
 
+                                    if (jogo.player2.ultimaJogada != null) {
+                                        /// Quer dizer que o outro jogador ja efetuou sua jogada
+
+
+
+                                        jogo.player1.ultimaJogada = null;
+                                        jogo.player2.ultimaJogada = null;
+                                    } else {
+                                        /// Quer dizer que o outro jogador nao efetuou sua jogada
+                                    }
+
+                                    //notifica convite ao convidado
+                                    Jogador guest = server.getClienteById(1);
+                                    /*
+                                     CONVITE
+                                     id:int //id de qm convidou
+                                     */
+                                    Mensagem convite = new Mensagem("CONVITE");
+                                    convite.setParam("id", "" + id);
+                                    guest.enviaMsgAoCliente(convite);
+
+                                    resposta.setStatus(Status.OK);
+                                    estado = Estados.ESPERANDO;
+                                    //timeout
+                                    //responder mensagem do "convidador"
+
+                                } catch (Exception e) {
+                                    resposta.setStatus(Status.ERROR);
+                                    resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                }
                             }
                             case "LOGOUT": {
                                 estado = Estados.CONECTADO;
