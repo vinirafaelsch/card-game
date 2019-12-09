@@ -4,11 +4,12 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.EnumMap;
+
 import util.Estados;
 import util.Mensagem;
 
 /**
- *
  * @author vinirafaelsch
  */
 public class Server {
@@ -27,16 +28,6 @@ public class Server {
     }
 
     /**
-     * @param args the command line arguments 1 - Criar o servidor de conexÃµes
-     * 2 -Esperar o um pedido de conexÃ£o; // Outro processo 2.1 e criar uma
-     * nova conexÃ£o; 3 - Criar streams de enechar socket de comunicaÃ§Ã£o entre
-     * servidor/cliente 4.2 - Fechar streams de entrada e saÃ­da trada e saÃ­da;
-     * 4 - Tratar a conversaÃ§Ã£o entre cliente e servidor (tratar protocolo);
-     * 4.1 - Fechar socket de comunicaÃ§Ã£o entre servidor/cliente 4.2 - Fechar
-     * streams de entrada e saÃ­da
-     *
-     *
-     *
      *
      */
     protected void avisaServer(String msg) {
@@ -124,8 +115,20 @@ public class Server {
         }
     }
 
-    protected synchronized void criarJogo(Jogador emissor, Jogador guest) {
-        System.out.println("Jogo entre cliente " + emissor.id + " e cliente " + guest.id
-                + " criados.");
+    protected synchronized void criarJogo(Jogador emissor, Jogador guest) throws IOException {
+        emissor.setEstado(Estados.JOGANDO);
+        guest.setEstado(Estados.JOGANDO);
+
+        Jogo novoJogo = new Jogo(emissor, guest);
+
+        emissor.setJogo(novoJogo);
+        guest.setJogo(novoJogo);
+
+        this.jogos.add(novoJogo);
+
+        emissor.enviaMsgAoCliente(emissor.getCartaAtualInfo());
+        guest.enviaMsgAoCliente(guest.getCartaAtualInfo());
+
+        System.out.println("Jogo entre " + emissor.getNome() + " e " + guest.getNome() + " foi iniciado!");
     }
 }

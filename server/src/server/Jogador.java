@@ -4,9 +4,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.List;
+
 import util.Estados;
 import util.Mensagem;
 import util.Status;
+
+import javax.crypto.spec.OAEPParameterSpec;
 
 /**
  * @author vinirafaelsch
@@ -26,6 +30,8 @@ class Jogador implements Runnable {
     private Estados estado;
 
     private Jogo jogo;
+
+    List<Card> deck;
 
     public Jogador(Socket socket, Server server, int id) {
         this.id = id;
@@ -81,7 +87,7 @@ class Jogador implements Runnable {
                 operacao = protocolo[0];
                 Mensagem resposta = new Mensagem(operacao.toUpperCase() + "RESPONSE");
                 switch (estado) {
-                    case CONECTADO:
+                    case CONECTADO: {
                         switch (operacao) {
                             case "LOGIN": {
                                 try {
@@ -100,17 +106,17 @@ class Jogador implements Runnable {
                                     resposta.setStatus(Status.ERROR);
                                     resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
                                 }
+                                break;
                             }
-                            break;
                             default: {
                                 resposta.setStatus(Status.ERROR);
                                 resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                break;
                             }
-                            break;
                         }
                         break;
-                    case AUTENTICADO:
-
+                    }
+                    case AUTENTICADO: {
                         switch (operacao) {
                             //tratamento somente das mensagens possíveis no estado AUTENTICADO
                             case "CONVIDAR": {
@@ -148,8 +154,8 @@ class Jogador implements Runnable {
                                     resposta.setStatus(Status.ERROR);
                                     resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
                                 }
+                                break;
                             }
-                            break;
                             case "CONVIDARTODOS": {
                                 try {
                                     /*
@@ -167,8 +173,8 @@ class Jogador implements Runnable {
                                     resposta.setStatus(Status.ERROR);
                                     resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
                                 }
+                                break;
                             }
-                            break;
                             case "CONVITE": {
                                 try {
                                     Mensagem m = Mensagem.parseString(msgCliente);
@@ -183,11 +189,10 @@ class Jogador implements Runnable {
                                     Jogador j = this.invite;
                                     j.enviaMsgAoCliente(reply);
 
-                                    if (res.equals("ACCEPT") && this.getEstado() != Estados.JOGANDO
-                                            && this.invite.getEstado() != Estados.JOGANDO) {
+                                    if (res.equals("ACCEPT") &&
+                                            this.getEstado() != Estados.JOGANDO &&
+                                            this.invite.getEstado() != Estados.JOGANDO) {
                                         server.criarJogo(this, this.invite);
-                                        this.setEstado(Estados.JOGANDO);
-                                        this.invite.setEstado(Estados.JOGANDO);
                                     } else {
                                         resposta.setParam("error", "O convite foi recusado ou o Jogador está em outra partida");
                                     }
@@ -199,8 +204,8 @@ class Jogador implements Runnable {
                                     resposta.setStatus(Status.ERROR);
                                     resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
                                 }
+                                break;
                             }
-                            break;
                             case "CONVITETODOS": {
                                 try {
                                     Mensagem m = Mensagem.parseString(msgCliente);
@@ -231,68 +236,62 @@ class Jogador implements Runnable {
                                     resposta.setStatus(Status.ERROR);
                                     resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
                                 }
-                            }
-                            break;
-                            case "JOGADA": {
-                                try {
-                                    Mensagem m = Mensagem.parseString(msgCliente);
-                                    ultimaJogada = m.getParam("opcao"); // stamina or strength or defense
-
-                                    if (jogo.player2.ultimaJogada != null) {
-                                        /// Quer dizer que o outro jogador ja efetuou sua jogada
-
-                                        jogo.player1.ultimaJogada = null;
-                                        jogo.player2.ultimaJogada = null;
-                                    } else {
-                                        /// Quer dizer que o outro jogador nao efetuou sua jogada
-                                    }
-
-                                    //notifica convite ao convidado
-                                    Jogador guest = server.getClienteById(1);
-                                    /*
-                                     CONVITE
-                                     id:int //id de qm convidou
-                                     */
-                                    Mensagem convite = new Mensagem("CONVITE");
-                                    convite.setParam("id", "" + id);
-                                    guest.enviaMsgAoCliente(convite);
-
-                                    resposta.setStatus(Status.OK);
-                                    estado = Estados.ESPERANDO;
-                                    //timeout
-                                    //responder mensagem do "convidador"
-
-                                } catch (Exception e) {
-                                    resposta.setStatus(Status.ERROR);
-                                    resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
-                                }
+                                break;
                             }
                             case "LOGOUT": {
                                 estado = Estados.CONECTADO;
                                 response = "LOGOUTRESPONSE";
                                 response += "\n200";
+                                break;
                             }
-                            break;
                             default: {
                                 //mensagem inválida
                                 resposta.setStatus(Status.ERROR);
                                 resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                break;
                             }
-                            break;
                         }
                         break;
-
-                    case ESPERANDO:
+                    }
+                    case ESPERANDO: {
                         switch (operacao) {
-                            case "ACCEPT":
+                            case "ACCEPT": {
                                 System.out.println("ACCEPTADA");
                                 break;
-                            case "REFUSE":
+                            }
+                            case "REFUSE": {
                                 resposta.setStatus(Status.OK);
                                 estado = Estados.CONECTADO;
                                 break;
+                            }
                         }
                         break;
+                    }
+                    case JOGANDO: {
+                        switch (operacao) {
+                            case "JOGADA": {
+                                /**
+                                 * JOGADA;opcao:stamina
+                                 * JOGADA;opcao:strength
+                                 */
+
+                                try {
+                                    Mensagem m = Mensagem.parseString(msgCliente);
+                                    String opcao = m.getParam("opcao"); // stamina or strength or defense
+
+                                    String jogadaStatus = this.processaJogada(opcao);
+
+                                    resposta.setStatus(Status.OK);
+                                    resposta.setParam("STATUS", "" + jogadaStatus);
+                                } catch (Exception e) {
+                                    resposta.setStatus(Status.ERROR);
+                                    resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                    }
                 }
                 //enviar a resposta ao cliente
                 //output.writeUTF(response);
@@ -345,5 +344,121 @@ class Jogador implements Runnable {
 
     public void setJogo(Jogo jogo) {
         this.jogo = jogo;
+    }
+
+    private synchronized String processaJogada(String opcao) throws IOException {
+        if (!this.estado.equals(Estados.JOGANDO)) {
+            return "Somente jogadores que estão em uma partida podem executar uma jogada!";
+        }
+
+        this.ultimaJogada = opcao;
+
+        if (this.getAdversario().ultimaJogada != null) {
+
+            Integer escolha1 = this.processaEscolha();
+            Integer escolha2 = this.getAdversario().processaEscolha();
+
+            Jogador vencedor = this.processaVencedor(escolha1, escolha2);
+
+            /**
+             * reseta as jogadas
+             */
+            ultimaJogada = null;
+            getAdversario().ultimaJogada = null;
+
+            String retorno = "", status = "";
+            Mensagem convite = new Mensagem("JOGADARESPONSE");
+
+            if (vencedor == null) {
+                status = "OUVE EMPATE";
+                retorno = "OUVE EMPATE";
+            } else if (vencedor.equals(this)) {
+                /// troca as cartas
+                Card carta = getAdversario().getCartaAtual();
+                getAdversario().deck.remove(carta);
+                this.deck.add(carta);
+
+                status = "VOCE PERDEU";
+                retorno = "VOCE VENCEU";
+            } else {
+                /// troca as cartas
+                Card carta = this.getCartaAtual();
+                this.deck.remove(carta);
+                getAdversario().deck.add(carta);
+
+                status = "VOCE VENCEU";
+                retorno = "VOCE PERDEU";
+            }
+
+            if (this.deck.isEmpty() || getAdversario().deck.isEmpty()) {
+                /// fim de jogo
+                String winnerMsg = "";
+                if (this.deck.isEmpty()) {
+                    winnerMsg = this.nome + " venceu!";
+                } else {
+                    winnerMsg = this.getAdversario().nome + " venceu!";
+                }
+
+                this.server.jogos.remove(this.getJogo());
+                this.getAdversario().estado = Estados.AUTENTICADO;
+                this.estado = Estados.AUTENTICADO;
+
+                status = "O JOGO ACABOU " + winnerMsg;
+                retorno = "O JOGO ACABOU " + winnerMsg;
+            } else {
+                this.enviaMsgAoCliente(this.getCartaAtualInfo());
+                this.getAdversario().enviaMsgAoCliente(this.getAdversario().getCartaAtualInfo());
+            }
+
+            convite.setParam("STATUS", status);
+            getAdversario().enviaMsgAoCliente(convite);
+
+            return retorno;
+        } else {
+            /// aguarda adversario jogar
+            return "Agurde o outro jogador!";
+        }
+    }
+
+    private Jogador getAdversario() {
+        if (jogo == null) {
+            return null;
+        }
+        return (jogo.player1 != this) ? jogo.player1 : jogo.player2;
+    }
+
+    private Card getCartaAtual() {
+        return this.deck.get(0);
+    }
+
+    public Mensagem getCartaAtualInfo() {
+        Card card = getCartaAtual();
+        String in = card.getName() + ":stamina" + card.getStamina() + ";strength:" + card.getStrength() + ";defense:" + card.getDefense() + ";";
+
+        Mensagem info = new Mensagem("CARTAATUALRESPONSE");
+        info.setParam("CARTA", in);
+
+        return info;
+    }
+
+    private Integer processaEscolha() {
+        if (this.ultimaJogada.equalsIgnoreCase("stamina")) {
+            return this.getCartaAtual().getStamina();
+        } else if (this.ultimaJogada.equalsIgnoreCase("strength")) {
+            return this.getCartaAtual().getStrength();
+        } else {
+            //// defense
+            return this.getCartaAtual().getDefense();
+        }
+    }
+
+    private Jogador processaVencedor(Integer escolha1, Integer escolha2) {
+        if (escolha1 > escolha2) {
+            return this;
+        } else if (escolha1 < escolha2) {
+            return this.getAdversario();
+        } else {
+            return null;
+        }
     }
 }
