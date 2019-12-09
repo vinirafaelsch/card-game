@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import util.Estados;
 import util.Mensagem;
 
 /**
@@ -114,23 +115,17 @@ public class Server {
 
     /*Broadcast*/
     protected void broadcast(Mensagem m, Jogador emissor) throws IOException {
-        if (emissor == null) {
-            //manda para todos
-            for (Jogador t : jogadores) {
+        //manda pra todos, menos pro processo da tarefa
+        for (Jogador t : jogadores) {
+            if (t != emissor && t.getEstado() != Estados.ESPERANDO) {
                 t.enviaMsgAoCliente(m);
-            }
-        } else {
-            //manda pra todos, menos pro processo da tarefa
-            for (Jogador t : jogadores) {
-                if (t != emissor) {
-                    t.enviaMsgAoCliente(m);
-                }
+                t.setInvite(emissor);
             }
         }
     }
 
-    protected void criarJogo(Jogador emissor, Jogador guest) {
-        System.out.println("Jogo entre cliente " + emissor.id + " e cliente " + guest.id +
-                " criados.");
+    protected synchronized void criarJogo(Jogador emissor, Jogador guest) {
+        System.out.println("Jogo entre cliente " + emissor.id + " e cliente " + guest.id
+                + " criados.");
     }
 }

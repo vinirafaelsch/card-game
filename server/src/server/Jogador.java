@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
-
 import util.Estados;
 import util.Mensagem;
 import util.Status;
@@ -129,14 +127,20 @@ class Jogador implements Runnable {
                                      CONVITE
                                      id:int //id de qm convidou
                                      */
-                                    Mensagem convite = new Mensagem("CONVITE");
-                                    convite.setParam("id", "" + id);
-                                    guest.enviaMsgAoCliente(convite);
+                                    if (guest.getEstado() != Estados.ESPERANDO) {
+                                        Mensagem convite = new Mensagem("CONVITE");
+                                        convite.setParam("id", "" + id);
 
-                                    guest.invite = this;
+                                        guest.enviaMsgAoCliente(convite);
 
-                                    resposta.setStatus(Status.OK);
-                                    estado = Estados.ESPERANDO;
+                                        guest.invite = this;
+
+                                        resposta.setStatus(Status.OK);
+                                        estado = Estados.ESPERANDO;
+                                    } else {
+                                        resposta.setStatus(Status.OK);
+                                        resposta.setParam("error", "Jogador aguardando resposta");
+                                    }
                                     //timeout
                                     //responder mensagem do "convidador"
 
@@ -147,17 +151,12 @@ class Jogador implements Runnable {
                             }
                             break;
                             case "CONVIDARTODOS": {
-                                /*
-                                 CONVIDAR
-                                 id:int
-                                 */
                                 try {
                                     /*
                                      CONVITE
                                      null
                                      */
                                     Mensagem convite = new Mensagem("CONVITETODOS");
-                                    convite.setParam("id", "" + id);
                                     server.broadcast(convite, this);
 
                                     resposta.setStatus(Status.OK);
@@ -181,15 +180,53 @@ class Jogador implements Runnable {
                                     reply.setParam("id", "" + this.invite.id);
                                     reply.setParam("id2", "" + id);
 
+                                    Jogador j = this.invite;
+                                    j.enviaMsgAoCliente(reply);
+
+                                    if (res.equals("ACCEPT") && this.getEstado() != Estados.JOGANDO
+                                            && this.invite.getEstado() != Estados.JOGANDO) {
+                                        server.criarJogo(this, this.invite);
+                                        this.setEstado(Estados.JOGANDO);
+                                        this.invite.setEstado(Estados.JOGANDO);
+                                    } else {
+                                        resposta.setParam("error", "O convite foi recusado ou o Jogador está em outra partida");
+                                    }
+
                                     reply.setStatus(Status.OK);
                                     resposta.setStatus(Status.OK);
+
+                                } catch (Exception e) {
+                                    resposta.setStatus(Status.ERROR);
+                                    resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                }
+                            }
+                            break;
+                            case "CONVITETODOS": {
+                                try {
+                                    Mensagem m = Mensagem.parseString(msgCliente);
+                                    Mensagem reply = new Mensagem("RESPONDECONVITETODOS");
+
+                                    String res = m.getParam("response");
+
+                                    reply.setParam("response", res);
+                                    reply.setParam("id", "" + this.invite.id);
+                                    reply.setParam("id2", "" + id);
 
                                     Jogador j = this.invite;
                                     j.enviaMsgAoCliente(reply);
 
-                                    if (res.equals("ACCEPT")) {
+                                    if (res.equals("ACCEPT") && this.getEstado() != Estados.JOGANDO
+                                            && this.invite.getEstado() != Estados.JOGANDO) {
                                         server.criarJogo(this, this.invite);
+                                        this.setEstado(Estados.JOGANDO);
+                                        this.invite.setEstado(Estados.JOGANDO);
+                                    } else {
+                                        resposta.setParam("error", "O convite foi recusado ou o Jogador está em outra partida");
                                     }
+
+                                    reply.setStatus(Status.OK);
+                                    resposta.setStatus(Status.OK);
+
                                 } catch (Exception e) {
                                     resposta.setStatus(Status.ERROR);
                                     resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
