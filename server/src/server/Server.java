@@ -129,7 +129,8 @@ public class Server {
         }
     }
 
-//    protected void criarJogo(Jogador emissor, Jogador guest) {
-//
-//    }
+    protected void criarJogo(Jogador emissor, Jogador guest) {
+        System.out.println("Jogo entre cliente " + emissor.id + " e cliente " + guest.id +
+                " criados.");
+    }
 }

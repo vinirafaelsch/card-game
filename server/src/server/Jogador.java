@@ -19,19 +19,21 @@ class Jogador implements Runnable {
     Server server;
     ObjectOutputStream output;
     ObjectInputStream input;
+
     int id;
     private String nome;
-    Jogo jogo;
-    private ArrayList<Jogador> invites;
+
+    private Jogador invite;
     private String ultimaJogada;
     private Estados estado;
+
+    private Jogo jogo;
 
     public Jogador(Socket socket, Server server, int id) {
         this.id = id;
         this.socket = socket;
         this.server = server;
         estado = Estados.CONECTADO;
-        invites = new ArrayList<>();
     }
 
     public int getId() {
@@ -130,7 +132,8 @@ class Jogador implements Runnable {
                                     Mensagem convite = new Mensagem("CONVITE");
                                     convite.setParam("id", "" + id);
                                     guest.enviaMsgAoCliente(convite);
-                                    guest.getInvites().add(this);
+
+                                    guest.invite = this;
 
                                     resposta.setStatus(Status.OK);
                                     estado = Estados.ESPERANDO;
@@ -168,21 +171,29 @@ class Jogador implements Runnable {
                             }
                             break;
                             case "CONVITE": {
-                                Mensagem m = Mensagem.parseString(msgCliente);
-                                Mensagem reply = new Mensagem("RESPONDECONVITE");
+                                try {
+                                    Mensagem m = Mensagem.parseString(msgCliente);
+                                    Mensagem reply = new Mensagem("RESPONDECONVITE");
 
-                                String res = m.getParam("response");
-                                int id1 = Integer.parseInt(m.getParam("id"));
+                                    String res = m.getParam("response");
 
-                                reply.setParam("response", res);
-                                reply.setParam("id", "" + id1);
-                                reply.setParam("id2", "" + id);
+                                    reply.setParam("response", res);
+                                    reply.setParam("id", "" + this.invite.id);
+                                    reply.setParam("id2", "" + id);
 
-                                reply.setStatus(Status.OK);
-                                resposta.setStatus(Status.OK);
+                                    reply.setStatus(Status.OK);
+                                    resposta.setStatus(Status.OK);
 
-                                Jogador j = server.getClienteById(id1);
-                                j.enviaMsgAoCliente(reply);
+                                    Jogador j = this.invite;
+                                    j.enviaMsgAoCliente(reply);
+
+                                    if (res.equals("ACCEPT")) {
+                                        server.criarJogo(this, this.invite);
+                                    }
+                                } catch (Exception e) {
+                                    resposta.setStatus(Status.ERROR);
+                                    resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                }
                             }
                             break;
                             case "JOGADA": {
@@ -267,14 +278,6 @@ class Jogador implements Runnable {
 
     }
 
-    public ArrayList<Jogador> getInvites() {
-        return invites;
-    }
-
-    public void setInvites(ArrayList<Jogador> invites) {
-        this.invites = invites;
-    }
-
     public String getNome() {
         return nome;
     }
@@ -291,4 +294,19 @@ class Jogador implements Runnable {
         this.estado = estado;
     }
 
+    public Jogador getInvite() {
+        return invite;
+    }
+
+    public void setInvite(Jogador invite) {
+        this.invite = invite;
+    }
+
+    public Jogo getJogo() {
+        return jogo;
+    }
+
+    public void setJogo(Jogo jogo) {
+        this.jogo = jogo;
+    }
 }
