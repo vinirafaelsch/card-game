@@ -14,6 +14,7 @@ public class Server {
 
     private ServerSocket serverSocket;
     int porta;
+    int autenticados;
     ArrayList<Thread> threads;
     ArrayList<Jogador> jogadores;
     ArrayList<Jogo> jogos;

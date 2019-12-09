@@ -20,14 +20,17 @@ class Jogador implements Runnable {
     ObjectOutputStream output;
     ObjectInputStream input;
     int id;
+    private String nome;
     Jogo jogo;
     private ArrayList<Jogador> invites;
     private String ultimaJogada;
+    private Estados estado;
 
     public Jogador(Socket socket, Server server, int id) {
-        this.socket = socket;
-        this.server = server;
         this.id = id;
+        this.socket = socket;
+        this.server = server;      
+        estado = Estados.CONECTADO;
         invites = new ArrayList<>();
     }
 
@@ -64,7 +67,6 @@ class Jogador implements Runnable {
             String msgResposta = "";
             String operacao = "";
             //Armazena o estado da comunicação com o cliente
-            Estados estado = Estados.CONECTADO;
 
             boolean primeira = true;
             //event loop
@@ -80,6 +82,21 @@ class Jogador implements Runnable {
                 Mensagem resposta = new Mensagem(operacao.toUpperCase() + "RESPONSE");
                 switch (estado) {
                     case CONECTADO:
+                        switch (operacao) {
+                            case "LOGIN":
+                                Mensagem m = Mensagem.parseString(msgCliente);
+                                String name = m.getParam("nome");
+                                
+                                this.nome = name;
+                                
+                                estado = Estados.AUTENTICADO;                                
+                                break;
+                            default:
+
+                                break;
+                        }
+
+                    case AUTENTICADO:
 
                         switch (operacao) {
                             //tratamento somente das mensagens possíveis no estado AUTENTICADO
@@ -163,8 +180,6 @@ class Jogador implements Runnable {
                                     if (jogo.player2.ultimaJogada != null) {
                                         /// Quer dizer que o outro jogador ja efetuou sua jogada
 
-
-
                                         jogo.player1.ultimaJogada = null;
                                         jogo.player2.ultimaJogada = null;
                                     } else {
@@ -238,6 +253,8 @@ class Jogador implements Runnable {
         }
 
     }
+    
+    
 
     public ArrayList<Jogador> getInvites() {
         return invites;
@@ -247,5 +264,22 @@ class Jogador implements Runnable {
         this.invites = invites;
     }
 
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public Estados getEstado() {
+        return estado;
+    }
+
+    public void setEstado(Estados estado) {
+        this.estado = estado;
+    }
+    
+    
 
 }
