@@ -29,7 +29,7 @@ class Jogador implements Runnable {
     public Jogador(Socket socket, Server server, int id) {
         this.id = id;
         this.socket = socket;
-        this.server = server;      
+        this.server = server;
         estado = Estados.CONECTADO;
         invites = new ArrayList<>();
     }
@@ -83,19 +83,32 @@ class Jogador implements Runnable {
                 switch (estado) {
                     case CONECTADO:
                         switch (operacao) {
-                            case "LOGIN":
-                                Mensagem m = Mensagem.parseString(msgCliente);
-                                String name = m.getParam("nome");
-                                
-                                this.nome = name;
-                                
-                                estado = Estados.AUTENTICADO;                                
-                                break;
-                            default:
-
-                                break;
+                            case "LOGIN": {
+                                try {
+                                    if (server.autenticados < 10) {
+                                        Mensagem m = Mensagem.parseString(msgCliente);
+                                        String name = m.getParam("nome");
+                                        this.nome = name;
+                                        estado = Estados.AUTENTICADO;
+                                        server.autenticados++;
+                                        resposta.setStatus(Status.OK);
+                                    } else {
+                                        resposta.setStatus(Status.ERROR);
+                                        resposta.setParam("error", "Limite de usuários autenticados excedido");
+                                    }
+                                } catch (Exception e) {
+                                    resposta.setStatus(Status.ERROR);
+                                    resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                }
+                            }
+                            break;
+                            default: {
+                                resposta.setStatus(Status.ERROR);
+                                resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                            }
+                            break;
                         }
-
+                        break;
                     case AUTENTICADO:
 
                         switch (operacao) {
@@ -253,8 +266,6 @@ class Jogador implements Runnable {
         }
 
     }
-    
-    
 
     public ArrayList<Jogador> getInvites() {
         return invites;
@@ -279,7 +290,5 @@ class Jogador implements Runnable {
     public void setEstado(Estados estado) {
         this.estado = estado;
     }
-    
-    
 
 }
