@@ -42,6 +42,8 @@ class Jogador implements Runnable {
     }
 
     protected void enviaMsgAoCliente(Mensagem m) throws IOException {
+
+        m.setStatus(Status.OK);
         output.writeUTF(m.toString());
         output.flush();
     }
@@ -72,12 +74,9 @@ class Jogador implements Runnable {
                 String[] protocolo = msgCliente.split(";");
                 operacao = protocolo[0];
                 Mensagem resposta = new Mensagem(operacao.toUpperCase() + "RESPONSE");
-
                 switch (estado) {
                     case CONECTADO:
-                        
-                        break;
-                    case AUTENTICADO:
+
                         switch (operacao) {
                             //tratamento somente das mensagens possíveis no estado AUTENTICADO
                             case "CONVIDAR": {
@@ -108,15 +107,50 @@ class Jogador implements Runnable {
                                 }
                             }
                             break;
-                            case "CHECK":
-                                //validando protocolo (parse)
+                            case "CONVIDARTODOS": {
+                                /*
+                                 CONVIDAR
+                                 id:int
+                                 */
                                 try {
-                                    //tratamento da mensagem
+                                    /*
+                                     CONVITE
+                                     null
+                                     */
+                                    Mensagem convite = new Mensagem("CONVITETODOS");
+                                    convite.setParam("id", "" + id);
+                                    server.broadcast(convite, this);
 
+                                    resposta.setStatus(Status.OK);
+                                    estado = Estados.ESPERANDO;
+                                    //timeout
+                                    //responder mensagem do "convidador"
                                 } catch (Exception e) {
-
+                                    resposta.setStatus(Status.ERROR);
+                                    resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
                                 }
+                            }
+                            break;
+
+                            case "CONVITE":
+                                Mensagem m = Mensagem.parseString(msgCliente);
+                                Mensagem reply = new Mensagem("RESPONDECONVITE");
+                                
+                                String res = m.getParam("response");
+                                int id1 = Integer.parseInt(m.getParam("id1"));
+                                int id2 = Integer.parseInt(m.getParam("id2"));
+                                
+                                reply.setParam("response", res);
+                                reply.setParam("id1", "" + id1);
+                                reply.setParam("id2", "" + id2);
+                                
+                                reply.setStatus(Status.OK);
+                                
+                                Jogador j = server.getClienteById(id2);
+                                j.enviaMsgAoCliente(reply);
+
                                 break;
+
                             //exemplo com troca de estados
                             case "LOGOUT":
                                 estado = Estados.CONECTADO;
@@ -127,6 +161,18 @@ class Jogador implements Runnable {
                                 //mensagem inválida
                                 resposta.setStatus(Status.ERROR);
                                 resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
+                                break;
+                        }
+                        break;
+
+                    case ESPERANDO:
+                        switch (operacao) {
+                            case "ACCEPT":
+                                System.out.println("ACCEPTADA");
+                                break;
+                            case "REFUSE":
+                                resposta.setStatus(Status.OK);
+                                estado = Estados.CONECTADO;
                                 break;
                         }
                         break;

@@ -127,15 +127,6 @@ public class Server {
             }
         }
     }
-    
-    // Envia mensagem para um cliente especifico
-    protected void sendToOne(Mensagem m, Jogador emissor, Jogador guest) throws IOException {
-        for (Jogador t : jogadores) {
-            if (t != emissor && t == guest) {
-                t.enviaMsgAoCliente(m);
-            }
-        }
-    }
 
 //    protected void criarJogo(Jogador emissor, Jogador guest) {
 //
