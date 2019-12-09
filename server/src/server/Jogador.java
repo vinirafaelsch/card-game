@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import util.Estados;
 import util.Mensagem;
 import util.Status;
@@ -20,11 +21,13 @@ class Jogador implements Runnable {
     ObjectInputStream input;
     int id;
     Jogo jogo;
+    private ArrayList<Jogador> invites;
 
     public Jogador(Socket socket, Server server, int id) {
         this.socket = socket;
         this.server = server;
         this.id = id;
+        invites = new ArrayList<>();
     }
 
     public int getId() {
@@ -96,11 +99,13 @@ class Jogador implements Runnable {
                                     Mensagem convite = new Mensagem("CONVITE");
                                     convite.setParam("id", "" + id);
                                     guest.enviaMsgAoCliente(convite);
+                                    guest.getInvites().add(this);
 
                                     resposta.setStatus(Status.OK);
                                     estado = Estados.ESPERANDO;
                                     //timeout
                                     //responder mensagem do "convidador"
+
                                 } catch (Exception e) {
                                     resposta.setStatus(Status.ERROR);
                                     resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
@@ -135,18 +140,18 @@ class Jogador implements Runnable {
                             case "CONVITE":
                                 Mensagem m = Mensagem.parseString(msgCliente);
                                 Mensagem reply = new Mensagem("RESPONDECONVITE");
-                                
+
                                 String res = m.getParam("response");
-                                int id1 = Integer.parseInt(m.getParam("id1"));
-                                int id2 = Integer.parseInt(m.getParam("id2"));
-                                
+                                int id1 = Integer.parseInt(m.getParam("id"));
+
                                 reply.setParam("response", res);
-                                reply.setParam("id1", "" + id1);
-                                reply.setParam("id2", "" + id2);
-                                
+                                reply.setParam("id", "" + id1);
+                                reply.setParam("id2", "" + id);
+
                                 reply.setStatus(Status.OK);
-                                
-                                Jogador j = server.getClienteById(id2);
+                                resposta.setStatus(Status.OK);
+
+                                Jogador j = server.getClienteById(id1);
                                 j.enviaMsgAoCliente(reply);
 
                                 break;
@@ -198,4 +203,14 @@ class Jogador implements Runnable {
 
     }
 
+    public ArrayList<Jogador> getInvites() {
+        return invites;
+    }
+
+    public void setInvites(ArrayList<Jogador> invites) {
+        this.invites = invites;
+    }
+
+    
+    
 }
