@@ -5,12 +5,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+
 import util.Estados;
 import util.Mensagem;
 import util.Status;
 
 /**
- *
  * @author vinirafaelsch
  */
 class Jogador implements Runnable {
@@ -136,8 +136,7 @@ class Jogador implements Runnable {
                                 }
                             }
                             break;
-
-                            case "CONVITE":
+                            case "CONVITE": {
                                 Mensagem m = Mensagem.parseString(msgCliente);
                                 Mensagem reply = new Mensagem("RESPONDECONVITE");
 
@@ -153,20 +152,23 @@ class Jogador implements Runnable {
 
                                 Jogador j = server.getClienteById(id1);
                                 j.enviaMsgAoCliente(reply);
+                            }
+                            break;
+                            case "JOGADA": {
 
-                                break;
-
-                            //exemplo com troca de estados
-                            case "LOGOUT":
+                            }
+                            case "LOGOUT": {
                                 estado = Estados.CONECTADO;
                                 response = "LOGOUTRESPONSE";
                                 response += "\n200";
-                                break;
-                            default:
+                            }
+                            break;
+                            default: {
                                 //mensagem inválida
                                 resposta.setStatus(Status.ERROR);
                                 resposta.setParam("error", "Mensagem Inválida ou não autorizada!");
-                                break;
+                            }
+                            break;
                         }
                         break;
 
@@ -211,6 +213,5 @@ class Jogador implements Runnable {
         this.invites = invites;
     }
 
-    
-    
+
 }
