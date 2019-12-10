@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 
 import util.Estados;
 import util.Mensagem;
@@ -20,11 +22,13 @@ public class Server {
     ArrayList<Thread> threads;
     ArrayList<Jogador> jogadores;
     ArrayList<Jogo> jogos;
+    Map<String, Integer> rank;
 
     public Server() {
         threads = new ArrayList<>();
         jogadores = new ArrayList<>();
         jogos = new ArrayList<>();
+        rank = new HashMap<>();
     }
 
     /**
@@ -130,5 +134,13 @@ public class Server {
         guest.enviaMsgAoCliente(guest.getCartaAtualInfo());
 
         System.out.println("Jogo entre " + emissor.getNome() + " e " + guest.getNome() + " foi iniciado!");
+    }
+    
+    public void setParam(String chave, Integer valor) {
+        rank.put(chave, valor);
+    }
+
+    public Integer getParam(String chave) {
+        return rank.get(chave);
     }
 }

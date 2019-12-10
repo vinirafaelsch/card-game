@@ -5,12 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
-
+import java.util.Map;
+import java.util.Set;
 import util.Estados;
 import util.Mensagem;
 import util.Status;
-
-import javax.crypto.spec.OAEPParameterSpec;
 
 /**
  * @author vinirafaelsch
@@ -189,9 +188,9 @@ class Jogador implements Runnable {
                                     Jogador j = this.invite;
                                     j.enviaMsgAoCliente(reply);
 
-                                    if (res.equals("ACCEPT") &&
-                                            this.getEstado() != Estados.JOGANDO &&
-                                            this.invite.getEstado() != Estados.JOGANDO) {
+                                    if (res.equals("ACCEPT")
+                                            && this.getEstado() != Estados.JOGANDO
+                                            && this.invite.getEstado() != Estados.JOGANDO) {
                                         server.criarJogo(this, this.invite);
                                     } else {
                                         resposta.setParam("error", "O convite foi recusado ou o Jogador está em outra partida");
@@ -238,6 +237,20 @@ class Jogador implements Runnable {
                                 }
                                 break;
                             }
+                            case "RANKING": {
+                                String printRank = "";
+
+                                Set<String> key = server.rank.keySet();
+                                for (String chave : key) {
+                                    if (chave != null) {
+                                        resposta.setParam(chave, "" + server.rank.get(chave));
+                                    }
+                                }
+                                
+                                resposta.setStatus(Status.OK);
+
+                                break;
+                            }
                             case "LOGOUT": {
                                 estado = Estados.CONECTADO;
                                 response = "LOGOUTRESPONSE";
@@ -271,8 +284,7 @@ class Jogador implements Runnable {
                         switch (operacao) {
                             case "JOGADA": {
                                 /**
-                                 * JOGADA;opcao:stamina
-                                 * JOGADA;opcao:strength
+                                 * JOGADA;opcao:stamina JOGADA;opcao:strength
                                  */
 
                                 try {
@@ -395,8 +407,24 @@ class Jogador implements Runnable {
                 String winnerMsg = "";
                 if (this.deck.isEmpty()) {
                     winnerMsg = this.nome + " venceu!";
+
+                    Integer wins = server.getParam(this.nome);
+                    if (wins != null) {
+                        wins++;
+                        server.setParam(this.nome, wins);
+                    } else {
+                        server.setParam(this.nome, 1);
+                    }
                 } else {
                     winnerMsg = this.getAdversario().nome + " venceu!";
+
+                    Integer wins = server.getParam(this.getAdversario().nome);
+                    if (wins != null) {
+                        wins++;
+                        server.setParam(this.getAdversario().nome, wins);
+                    } else {
+                        server.setParam(this.getAdversario().nome, 1);
+                    }
                 }
 
                 this.server.jogos.remove(this.getJogo());
