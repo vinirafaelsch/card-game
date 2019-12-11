@@ -281,20 +281,6 @@ class Jogador implements Runnable {
                         }
                         break;
                     }
-                    case ESPERANDO: {
-                        switch (operacao) {
-                            case "ACCEPT": {
-                                System.out.println("ACCEPTADA");
-                                break;
-                            }
-                            case "REFUSE": {
-                                resposta.setStatus(Status.OK);
-                                estado = Estados.CONECTADO;
-                                break;
-                            }
-                        }
-                        break;
-                    }
                     case JOGANDO: {
                         switch (operacao) {
                             case "JOGADA": {
