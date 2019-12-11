@@ -96,12 +96,11 @@ class Jogador implements Runnable {
                         switch (operacao) {
                             case "LOGIN": {
                                 try {
-                                    if (server.autenticados < 10) {
+                                    if (server.jogadores.size() < 10) {
                                         Mensagem m = Mensagem.parseString(msgCliente);
                                         String name = m.getParam("nome");
                                         this.nome = name;
                                         estado = Estados.AUTENTICADO;
-                                        server.autenticados++;
                                         resposta.setStatus(Status.OK);
                                     } else {
                                         resposta.setStatus(Status.ERROR);
@@ -313,6 +312,7 @@ class Jogador implements Runnable {
             } while (!operacao.equals("pare"));
         } catch (Exception e) {
             System.out.println("Erro no loop de tratamento do cliente: " + socket.getInetAddress().getHostAddress());
+            server.jogadores.remove(this);
         } finally {
             try {
                 //fechar as conexões
