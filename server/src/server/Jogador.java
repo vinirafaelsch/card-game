@@ -244,6 +244,7 @@ class Jogador implements Runnable {
                                 break;
                             }
                             case "RANKING": {
+                                String printRank = "";
                                 Map<String, Integer> rankingOrdenado = server.rank
                                         .entrySet()
                                         .stream()
@@ -255,10 +256,12 @@ class Jogador implements Runnable {
                                 Set<String> key = rankingOrdenado.keySet();
                                 for (String chave : key) {
                                     if (chave != null) {
-                                        resposta.setParam(chave, "" + rankingOrdenado.get(chave));
+                                        String points = "" + rankingOrdenado.get(chave);
+                                        printRank += "\n" + chave + "-" + points;
                                     }
                                 }
 
+                                resposta.setParam("ranking", printRank);
                                 resposta.setStatus(Status.OK);
 
                                 break;
