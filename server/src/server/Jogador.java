@@ -313,6 +313,7 @@ class Jogador implements Runnable {
         } catch (Exception e) {
             System.out.println("Erro no loop de tratamento do cliente: " + socket.getInetAddress().getHostAddress());
             server.jogadores.remove(this);
+            server.threads.remove(Thread.currentThread());
         } finally {
             try {
                 //fechar as conexões
