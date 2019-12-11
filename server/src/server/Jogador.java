@@ -244,10 +244,8 @@ class Jogador implements Runnable {
                                 break;
                             }
                             case "RANKING": {
-                                String printRank = "";
-
                                 Map<String, Integer> rankingOrdenado = server.rank
-                                .entrySet()
+                                        .entrySet()
                                         .stream()
                                         .sorted(comparingByValue())
                                         .collect(
