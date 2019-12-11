@@ -4,9 +4,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import static java.util.Map.Entry.comparingByValue;
 import java.util.Set;
+import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toMap;
+import java.util.stream.Stream;
 import util.Estados;
 import util.Mensagem;
 import util.Status;
@@ -240,13 +246,21 @@ class Jogador implements Runnable {
                             case "RANKING": {
                                 String printRank = "";
 
-                                Set<String> key = server.rank.keySet();
+                                Map<String, Integer> rankingOrdenado = server.rank
+                                .entrySet()
+                                        .stream()
+                                        .sorted(comparingByValue())
+                                        .collect(
+                                                toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2,
+                                                        LinkedHashMap::new));
+
+                                Set<String> key = rankingOrdenado.keySet();
                                 for (String chave : key) {
                                     if (chave != null) {
-                                        resposta.setParam(chave, "" + server.rank.get(chave));
+                                        resposta.setParam(chave, "" + rankingOrdenado.get(chave));
                                     }
                                 }
-                                
+
                                 resposta.setStatus(Status.OK);
 
                                 break;
@@ -405,7 +419,7 @@ class Jogador implements Runnable {
             if (this.deck.isEmpty() || getAdversario().deck.isEmpty()) {
                 /// fim de jogo
                 String winnerMsg = "";
-                if (this.deck.isEmpty()) {
+                if (getAdversario().deck.isEmpty()) {
                     winnerMsg = this.nome + " venceu!";
 
                     Integer wins = server.getParam(this.nome);
@@ -444,7 +458,7 @@ class Jogador implements Runnable {
             return retorno;
         } else {
             /// aguarda adversario jogar
-            return "Agurde o outro jogador!";
+            return "Aguarde o outro jogador!";
         }
     }
 
